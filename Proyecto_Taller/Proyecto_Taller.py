@@ -97,6 +97,28 @@ class Pelota(pygame.sprite.Sprite):
             return False      #Puesto a False para impedir game over y así testear
         else:
             return False
+
+class Bonus(pygame.sprite.Sprite):
+
+    largo = 5
+    alto = 10
+    vy = 1
+
+    def __init__(self, x, y):
+
+        super().__init__()
+
+        self.image = pygame.Surface([self.largo, self.alto])
+        self.image.fill((AZUL))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+    def update(self):
+        self.rect.y += self.vy
+        if (self.rect.y > 600) or (self.rect.y < 0):
+            self.kill()
+
  
 class Protagonista(pygame.sprite.Sprite):
 
@@ -123,6 +145,7 @@ class Protagonista(pygame.sprite.Sprite):
         self.rect.x = self.x = 0
         self.rect.y = self.y = self.alto_pantalla-self.alto
      
+
     def update(self):
 
         self.x += self.vx + 0.5 * self.ax * self.ax
@@ -140,6 +163,16 @@ class Protagonista(pygame.sprite.Sprite):
             self.vx = VEL
         elif self.vx < -VEL:
             self.vx = -VEL
+
+
+    def upgrade(self):
+        self.largo *= 1.25
+
+        self.image = pygame.Surface([self.largo, self.alto])
+        self.image.fill((BLANCO))
+        self.rect = self.image.get_rect()
+        self.rect.x = self.x
+        self.rect.y = self.y = self.alto_pantalla-self.alto
 
 
     def keydown(self, key):
@@ -165,6 +198,7 @@ fondo_pantalla = pygame.Surface(pantalla.get_size())    #Superficie de proyecci�
 # Listas de los sprites involucrados en el juego
 bloques = pygame.sprite.Group()
 pelotas = pygame.sprite.Group()
+bonuses = pygame.sprite.Group()
 todos_los_sprites = pygame.sprite.Group()
  
 # Objeto plataforma
@@ -175,7 +209,7 @@ todos_los_sprites.add(protagonista)
 pelota = Pelota()
 todos_los_sprites.add(pelota)
 pelotas.add(pelota)
- 
+
 # Objetos bloques
 largo_bloque = 23
 alto_bloque = 15
@@ -234,7 +268,7 @@ while not (inicio or salir_programa):
 while not salir_programa:
  
     # Golpe de reloj ajustado a 30 ciclos/segundo
-    reloj.tick(240)
+    reloj.tick(200)
  
     # Limpieza de la pantalla
     pantalla.fill(NEGRO)
@@ -256,6 +290,8 @@ while not salir_programa:
     if not (game_over or pausa):
         protagonista.update()
         game_over = pelota.update() #Mientras devuelva 'false' el juego prosigue
+        for bonus in bonuses:
+            bonus.update()
      
     # Al finalizar el juego se proyecta la pantalla de Game Over y sale del bucle del juego
     if game_over:
@@ -279,8 +315,9 @@ while not salir_programa:
         pelota.y = pantalla.get_height() - protagonista.alto - pelota.alto - 1
         pelota.botar_horizontal(diff)
      
-    # Comprobación de colisiones entre la pelota y los bloques (la lista queda vacía si no colisiona con nada)
+    # Comprobación de colisiones (la lista queda vacía si no colisiona con nada)
     bloquesmuertos = pygame.sprite.spritecollide(pelota, bloques, True)
+    bonusesmuertos = pygame.sprite.spritecollide(protagonista, bonuses, True)
     
     # Ante colisión (la lista de bloques "muertos" tiene contenido) se rebota
     if len(bloquesmuertos) > 0:
@@ -299,6 +336,12 @@ while not salir_programa:
             elif (pelota.rect.bottom >= bloque.rect.top) and (pelota.rect.bottom <= bloque.rect.bottom) and \
                 (pelota.rect.right  >  bloque.rect.left) and(pelota.rect.left  <  bloque.rect.right): #Golpe por arriba:
                 pelota.botar_horizontal(0)
+
+            if int(randint(0, int((numero_de_columnas*numero_de_filas - 1)/10))) != 0: #Creará unos pocos bonuses por partida
+                bonus = Bonus(bloque.rect.midbottom[0], bloque.rect.midbottom[1])
+                bonuses.add(bonus)
+                todos_los_sprites.add(bonus)
+
             break   #Solo un rebote por colisión (aunque sea múltiple)
 
             #if (pelota.rect.midtop[1] < bloque.rect.midtop[1]) and (pelota.rect.midright[0]  >  bloque.rect.midleft[0]) and(pelota.rect.midleft[0]  <  bloque.rect.midright[0]): #Golpe por abajo
@@ -324,6 +367,12 @@ while not salir_programa:
             #    pelota.botar_horizontal(0)
             #else:   #Resto de rebotes
             #    pelota.botar_vertical()
+
+
+    # Ante la colisión de bonus con el jugador, se otorga
+    if len(bonusesmuertos) > 0:
+        for bonus in bonusesmuertos:
+            protagonista.upgrade()
          
     # El juego se finaliza si todos los bloques desaparecen (la lista de bloques "vivos" queda vacía)
     if len(bloques) == 0:
