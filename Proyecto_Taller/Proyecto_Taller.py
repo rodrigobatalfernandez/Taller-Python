@@ -15,6 +15,12 @@ ROJO = (255, 0, 0)
 VERDE = (0, 255, 0)
 AZUL = (0, 0, 255)
 
+# Parámetros del juego
+TEM = 200   # Número de ciclos por segundo (o inversa de tiempo por ciclo)
+PUNT = 1000000  # Puntuación inicial
+SUM = 1000      # Suma por éxito
+RES = 10        # Resta por avance del tiempo
+
 # Parámetros de velocidad/aceleración del jugador
 VEL = 2.5/2
 AC = 0.1/2
@@ -248,7 +254,8 @@ inicio = False
 pausa = False
 game_over = False
 salir_programa = False
-contador = 0
+contador = PUNT
+temporizador = 0
 
 # Pantalla de Inicio
 while not (inicio or salir_programa):
@@ -280,8 +287,12 @@ while not (inicio or salir_programa):
 while not salir_programa:
  
     # Golpe de reloj ajustado a 30 ciclos/segundo
-    reloj.tick(200)
- 
+    reloj.tick(TEM)
+    
+    if not (game_over or pausa):
+        temporizador += TEM/1000
+        contador -= TEM/1000 * RES
+
     # Limpieza de la pantalla
     pantalla.fill(NEGRO)
      
@@ -304,16 +315,23 @@ while not salir_programa:
         game_over = pelota.update() #Mientras devuelva 'false' el juego prosigue
         for bonus in bonuses:
             bonus.update()
-        texto = fuente.render("Puntuación: " + str(contador), True, BLANCO)
-        textopos = texto.get_rect(centerx = fondo_pantalla.get_width()/8)
-        textopos.top = 10
-        pantalla.blit(texto, textopos)
+
+    texto = fuente.render("Puntuación: " + str(round(contador,2)), True, BLANCO)
+    textopos = texto.get_rect(centerx = fondo_pantalla.get_width()* (1.3/8))
+    textopos.top = 10
+    textopos.left = 10
+    pantalla.blit(texto, textopos)
+    texto = fuente.render("Tiempo: " + str(round(temporizador,2)), True, BLANCO)
+    textopos = texto.get_rect(centerx = fondo_pantalla.get_width() * (7/8))
+    textopos.top = 10
+    textopos.right = fondo_pantalla.get_width() - 10
+    pantalla.blit(texto, textopos)
      
     # Al finalizar el juego se proyecta la pantalla de Game Over y sale del bucle del juego
     if game_over:
         texto = fuente.render("Game Over", True, BLANCO)
         textopos = texto.get_rect(centerx=fondo_pantalla.get_width()/2)
-        textopos.top = 300
+        textopos.top = 300 
         pantalla.blit(texto, textopos) #Impresión de texto en pantalla
     elif pausa:
         texto = fuente.render("Pausa - Pulse 'E' para proseguir", True, BLANCO)
@@ -338,7 +356,7 @@ while not salir_programa:
     # Ante colisión (la lista de bloques "muertos" tiene contenido) se rebota
     if len(bloquesmuertos) > 0:
 
-        contador += len(bloquesmuertos)
+        contador += len(bloquesmuertos)*SUM
 
         for bloque in bloquesmuertos:
 
@@ -391,8 +409,10 @@ while not salir_programa:
     if len(bonusesmuertos) > 0:
         for bonus in bonusesmuertos:
             if bonus.tipo == 1:
+                contador += len(bloquesmuertos) * SUM * 10
                 protagonista.upgrade()
             elif bonus.tipo == 2:
+                contador -= len(bloquesmuertos) * SUM * 10
                 pelota.upgrade()
     
     # El juego se finaliza si todos los bloques desaparecen (la lista de bloques "vivos" queda vacía)
