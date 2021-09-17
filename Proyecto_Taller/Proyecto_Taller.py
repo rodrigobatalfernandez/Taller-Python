@@ -94,22 +94,33 @@ class Pelota(pygame.sprite.Sprite):
             self.y = 1
         elif self.y > 600:    # Rebote con la parte inferior de la pantalla
             self.botar_horizontal(0)
-            return False      #Puesto a False para impedir game over y así testear
+            return True      #Poner a false para MODO INMORTAL
         else:
             return False
+
+    def upgrade(self):
+        self.velocidad *= 5
+
 
 class Bonus(pygame.sprite.Sprite):
 
     largo = 5
     alto = 10
     vy = 1
+    tipo = 0
 
     def __init__(self, x, y):
 
         super().__init__()
 
+        self.tipo = randint(1,2)
+        if self.tipo == 1:
+            COLOR = AZUL
+        elif self.tipo == 2:
+            COLOR = ROJO
+
         self.image = pygame.Surface([self.largo, self.alto])
-        self.image.fill((AZUL))
+        self.image.fill((COLOR))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -237,6 +248,7 @@ inicio = False
 pausa = False
 game_over = False
 salir_programa = False
+contador = 0
 
 # Pantalla de Inicio
 while not (inicio or salir_programa):
@@ -292,6 +304,10 @@ while not salir_programa:
         game_over = pelota.update() #Mientras devuelva 'false' el juego prosigue
         for bonus in bonuses:
             bonus.update()
+        texto = fuente.render("Puntuación: " + str(contador), True, BLANCO)
+        textopos = texto.get_rect(centerx = fondo_pantalla.get_width()/8)
+        textopos.top = 10
+        pantalla.blit(texto, textopos)
      
     # Al finalizar el juego se proyecta la pantalla de Game Over y sale del bucle del juego
     if game_over:
@@ -322,6 +338,8 @@ while not salir_programa:
     # Ante colisión (la lista de bloques "muertos" tiene contenido) se rebota
     if len(bloquesmuertos) > 0:
 
+        contador += len(bloquesmuertos)
+
         for bloque in bloquesmuertos:
 
             if (pelota.rect.top <= bloque.rect.bottom) and (pelota.rect.top >= bloque.rect.top) and \
@@ -337,7 +355,7 @@ while not salir_programa:
                 (pelota.rect.right  >  bloque.rect.left) and(pelota.rect.left  <  bloque.rect.right): #Golpe por arriba:
                 pelota.botar_horizontal(0)
 
-            if int(randint(0, int((numero_de_columnas*numero_de_filas - 1)/10))) != 0: #Creará unos pocos bonuses por partida
+            if randint(0, int((numero_de_columnas * numero_de_filas - 1) / 10)) == 0: #Creará unos pocos bonuses por partida
                 bonus = Bonus(bloque.rect.midbottom[0], bloque.rect.midbottom[1])
                 bonuses.add(bonus)
                 todos_los_sprites.add(bonus)
@@ -372,8 +390,11 @@ while not salir_programa:
     # Ante la colisión de bonus con el jugador, se otorga
     if len(bonusesmuertos) > 0:
         for bonus in bonusesmuertos:
-            protagonista.upgrade()
-         
+            if bonus.tipo == 1:
+                protagonista.upgrade()
+            elif bonus.tipo == 2:
+                pelota.upgrade()
+    
     # El juego se finaliza si todos los bloques desaparecen (la lista de bloques "vivos" queda vacía)
     if len(bloques) == 0:
         game_over = True
