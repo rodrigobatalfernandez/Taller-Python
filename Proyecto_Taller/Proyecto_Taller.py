@@ -2,7 +2,7 @@
 import math
 import pygame
 import pandas as pd
-df = pd.read_excel(r'C:\Users\rodri\Documents\GitHub\Taller-Python\Mapa.xlsx')
+df = pd.read_excel(r'..\Mapa.xlsx')
 
 # Generador aleatorio de numeros
 from random import seed
@@ -16,7 +16,7 @@ VERDE = (0, 255, 0)
 AZUL = (0, 0, 255)
 
 # Parámetros del juego
-TEM = 200   # Número de ciclos por segundo (o inversa de tiempo por ciclo)
+TEM = 200       # Número de ciclos por segundo (o inversa de tiempo por ciclo)
 PUNT = 1000000  # Puntuación inicial
 SUM = 1000      # Suma por éxito
 RES = 10        # Resta por avance del tiempo
@@ -110,6 +110,7 @@ class Pelota(pygame.sprite.Sprite):
 
 class Bonus(pygame.sprite.Sprite):
 
+    # Atributos del Bonus
     largo = 5
     alto = 10
     vy = 1
@@ -356,7 +357,7 @@ while not salir_programa:
     # Ante colisión (la lista de bloques "muertos" tiene contenido) se rebota
     if len(bloquesmuertos) > 0:
 
-        contador += len(bloquesmuertos)*SUM
+        contador += len(bloquesmuertos) * SUM
 
         for bloque in bloquesmuertos:
 
